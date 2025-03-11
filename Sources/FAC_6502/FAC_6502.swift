@@ -33,7 +33,7 @@ public class FAC_6502 {
     public var X: UInt8 = 0x00
     public var Y: UInt8 = 0x00
     
-    
+    public var cycleCount = 0
     
     public init() {
     }

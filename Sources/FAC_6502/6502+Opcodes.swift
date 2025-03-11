@@ -13,7 +13,7 @@ extension FAC_6502 {
     public func fetchAndExecute() {
         let oldPC = PC
         let opCode = next()
-        var ts = 4
+        var ts = 2
         var mCycles = 1
         switch opCode {
             
@@ -128,7 +128,19 @@ extension FAC_6502 {
             mCycles = 6
             
         case 0x10:  // BPL rel
-            print(opCode)
+            // Current understanding - BPL branches to PC + (byte 2(2s compliment)) if the status flag 'Negative' is not set
+            // See https://www.pagetable.com/c64ref/6502/?tab=2#BPL
+            // Flags are not affected
+            let byte2 = next()
+            if (!P.isSet(bit: 7)){
+                let page = PC.highByte()
+                let twos = byte2.twosCompliment()
+                relativeJump(twos: twos)
+                let pg = page != PC.highByte() ? 1 : 0
+                mCycles = 3 + pg
+            } else {
+                mCycles = 2
+            }
             
         case 0x11:  // ORA ind,Y
             print(opCode)
@@ -556,6 +568,8 @@ extension FAC_6502 {
         default:
             break
         }
+        
+        cycleCount += mCycles
         //  mCyclesAndTStates(m: mCycles, t: ts)
         // Task {
         //     LoggingService.shared.logProcessor(oldPC, opCode: opCode.hex(), message: nil)

@@ -51,4 +51,9 @@ extension FAC_6502 {
         PC = memoryReadWord(from: 0xFFFE)
     }
     
+    func relativeJump(twos: UInt8) {
+        let jump = PC &+ UInt16(twos & 0x7f) &- UInt16(twos & 0x80)
+        PC = jump
+    }
+    
 }
