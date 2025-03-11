@@ -1,0 +1,49 @@
+//
+//  File.swift
+//  FAC_6502
+//
+//  Created by Mike Hall on 07/03/2025.
+//
+
+import Foundation
+import FAC_Common
+
+extension FAC_6502 {
+    
+    func next() -> UInt8 {
+        let oPC = PC
+        let opcode = memoryRead(from: PC)
+        PC = PC &+ 1
+        return opcode
+    }
+    
+    func push(_ value: UInt8) {
+        memoryWrite(page: 0x1, location: S, value: value)
+        S = S &- 0x1
+    }
+    
+    func push(_ value: UInt16) {
+        memoryWrite(page: 0x1, location: S, value: value.highByte())
+        S = S &- 0x1
+        memoryWrite(page: 0x1, location: S, value: value.lowByte())
+        S = S &- 0x1
+    }
+    
+    func pop(_ value: UInt8) -> UInt8 {
+        S = S &+ 0x1
+        return memoryRead(page: 0x1, location: S)
+    }
+    
+    func pop(_ value: UInt16) -> UInt16 {
+        S = S &+ 0x1
+        let low = memoryRead(page: 0x1, location: S)
+        S = S &+ 0x1
+        let high = memoryRead(page: 0x1, location: S)
+        return wordFrom(low: low, high: high)
+    }
+    
+    func jumpToAddressAt(_ location: UInt16) {
+        PC = memoryReadWord(from: 0xFFFE)
+    }
+    
+}
