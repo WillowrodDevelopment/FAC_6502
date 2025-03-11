@@ -55,7 +55,7 @@ extension FAC_6502 {
             mCycles = 3
             
         case 0x06:  // ASL zpg
-            // Current understanding - ASL zpg shifts the bits of the page 0 contents of byte 2
+            // Current understanding - ASL zpg shifts the bits of the page 0 contents of byte 2 1 place left
             // A is unaffected
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ASL
             // Updates Negative, Zero and Carry flags
@@ -70,19 +70,62 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x08:  // PHP impl
-            print(opCode)
+            // Current understanding - PHP simple pushes the status flag (P) to the stack
+            // A is unaffected
+            // See https://www.pagetable.com/c64ref/6502/?tab=2#PHP
+            // Flags are not affected
+            push(P)
+            mCycles = 3
             
         case 0x09:  // ORA #
-            print(opCode)
+            // Current understanding - ORA # Or's 'A' with byte 2
+            // A contains the Or'd value
+            // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
+            // Updates Negative and Zero flags
+            let value = next()
+            A = A | value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 3
             
         case 0x0A:  // ASL A
-            print(opCode)
+            // Current understanding - ASL A shifts the bits of the Accumulator 1 place left
+            // A contains bit shifted value
+            // See https://www.pagetable.com/c64ref/6502/?tab=2#ASL
+            // Updates Negative, Zero and Carry flags
+            let carryOut = (A & 0x80) != 0
+            A = A << 1
+            pCarry(isSet: carryOut)
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0x0D:  // ORA abs
-            print(opCode)
+            // Current understanding - ORA abs Or's 'A' with the location of the word at (byte 3 (high) byte 2 (low)
+            // A contains the Or'd value
+            // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
+            // Updates Negative and Zero flags
+            let location = nextWord()
+            let value = memoryRead(from: location)
+            A = A | value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
             
         case 0x0E:  // ASL abs
-            print(opCode)
+            // Current understanding - ASL abs shifts the bits of the word at (byte 3 (high) byte 2 (low)) 1 place left
+            // A contains the Or'd value
+            // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
+            // Updates Negative and Zero flags
+            let location = nextWord()
+            let value = memoryRead(from: location)
+            let carryOut = (value & 0x80) != 0
+            let shiftedValue = value << 1
+            memoryWrite(to: location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 6
             
         case 0x10:  // BPL rel
             print(opCode)

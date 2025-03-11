@@ -11,10 +11,15 @@ import FAC_Common
 extension FAC_6502 {
     
     func next() -> UInt8 {
-        let oPC = PC
         let opcode = memoryRead(from: PC)
         PC = PC &+ 1
         return opcode
+    }
+    
+    func nextWord() -> UInt16 {
+        let word = memoryReadWord(from: PC)
+        PC = PC &+ 2
+        return word
     }
     
     func push(_ value: UInt8) {
