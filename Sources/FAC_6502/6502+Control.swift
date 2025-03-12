@@ -22,6 +22,10 @@ extension FAC_6502 {
         return word
     }
     
+    func next(_ offset: UInt16) -> UInt8 {
+        return memoryRead(from: PC &+ offset)
+    }
+    
     func push(_ value: UInt8) {
         memoryWrite(page: 0x1, location: S, value: value)
         S = S &- 0x1
@@ -51,9 +55,8 @@ extension FAC_6502 {
         PC = memoryReadWord(from: 0xFFFE)
     }
     
-    func relativeJump(twos: UInt8) {
-        let jump = PC &+ UInt16(twos & 0x7f) &- UInt16(twos & 0x80)
-        PC = jump
+    func relativeJump(twos: UInt8) -> UInt16 {
+        return PC &+ UInt16(twos & 0x7f) &- UInt16(twos & 0x80)
     }
     
 }

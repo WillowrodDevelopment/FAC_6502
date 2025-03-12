@@ -8,7 +8,7 @@
 import Testing
 @testable import FAC_6502
 
-struct Test {
+struct TestOpcode000FTest {
 
     @Test func testBRK0x00() async throws {
         let cpu = FAC_6502()
@@ -32,13 +32,14 @@ struct Test {
         cpu.PC = 0x1234
         cpu.S = 0xFF
         cpu.P = 0x00
-        cpu.X = 0x06
+        cpu.X = 0x01
         cpu.A = 0x01
         cpu.memoryWrite(to: 0x1234, value: 01)
         cpu.memoryWrite(to: 0x1235, value: 06)
         for i in 0x00...0xff {
             cpu.memoryWrite(to: UInt16(i), value: UInt8(i))
         }
+        cpu.memoryWrite(to: 0x0807, value: 0x0C)
         cpu.fetchAndExecute()
         //print(cpu.ram[0][0xFFF0...])
         #expect(cpu.PC == 0x1236)
@@ -54,14 +55,15 @@ struct Test {
         cpu.X = 0xFF
         cpu.A = 0x01
         cpu.memoryWrite(to: 0x1234, value: 01)
-        cpu.memoryWrite(to: 0x1235, value: 06)
+        cpu.memoryWrite(to: 0x1235, value: 08)
         for i in 0x00...0xff {
             cpu.memoryWrite(to: UInt16(i), value: UInt8(i))
         }
+        cpu.memoryWrite(to: 0x0807, value: 0x0C)
         cpu.fetchAndExecute()
         //print(cpu.ram[0][0xFFF0...])
         #expect(cpu.PC == 0x1236)
-        #expect(cpu.A == 0x05)
+        #expect(cpu.A == 0x0D)
         #expect(cpu.P == 0x00)
     }
     
@@ -72,10 +74,11 @@ struct Test {
         cpu.X = 0xFF
         cpu.A = 0xF1
         cpu.memoryWrite(to: 0x1234, value: 01)
-        cpu.memoryWrite(to: 0x1235, value: 06)
+        cpu.memoryWrite(to: 0x1235, value: 08)
         for i in 0x00...0xff {
             cpu.memoryWrite(to: UInt16(i), value: UInt8(i))
         }
+        cpu.memoryWrite(to: 0x0807, value: 0x04)
         cpu.fetchAndExecute()
         //print(cpu.ram[0][0xFFF0...])
         #expect(cpu.PC == 0x1236)
@@ -90,10 +93,11 @@ struct Test {
         cpu.X = 0xFF
         cpu.A = 0x00
         cpu.memoryWrite(to: 0x1234, value: 01)
-        cpu.memoryWrite(to: 0x1235, value: 01)
+        cpu.memoryWrite(to: 0x1235, value: 08)
         for i in 0x00...0xff {
             cpu.memoryWrite(to: UInt16(i), value: UInt8(i))
         }
+        cpu.memoryWrite(to: 0x0807, value: 0x00)
         cpu.fetchAndExecute()
         //print(cpu.ram[0][0xFFF0...])
         #expect(cpu.PC == 0x1236)

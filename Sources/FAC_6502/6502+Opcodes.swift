@@ -30,13 +30,16 @@ extension FAC_6502 {
             mCycles = 7
             
         case 0x01:  // ORA X,ind
-            // Current understanding - ORA X,ind Or's 'A' with the page 0 contents of location (X + Byte 2)
+            // Current understanding - ORA X,ind Or's 'A' with the page 0 contents of location ((X + Byte 2 + 1 (high)) (X + Byte 2 (low)))
             // A contains the Or'd value
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
             // Updates Negative and Zero flags
-            let byte2 = next()
-            let location = byte2 &+ X
-            let value = memoryRead(page: 0, location: location)
+//            let byte2 = next()
+//            let location = byte2 &+ X
+//            let valueLow = memoryRead(page: 0, location: location)
+//            let valueHigh = memoryRead(page: 0, location: location &+ 1)
+//            let value = memoryRead(from: wordFrom(low: valueLow, high: valueHigh))
+            let value = fetchValue(mode: .indirectX).value
             A = A | value
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -47,8 +50,7 @@ extension FAC_6502 {
             // A contains the Or'd value
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
             // Updates Negative and Zero flags
-            let location = next()
-            let value = memoryRead(page: 0, location: location)
+            let value = fetchValue(mode: .zeroPage).value
             A = A | value
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -59,11 +61,11 @@ extension FAC_6502 {
             // A is unaffected
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ASL
             // Updates Negative, Zero and Carry flags
-            let location = next()
-            let value = memoryRead(page: 0, location: location)
+            let addressedValue = fetchValue(mode: .zeroPage)
+            let value = addressedValue.value
             let carryOut = (value & 0x80) != 0
             let shiftedValue = value << 1
-            memoryWrite(page: 0, location: location, value: shiftedValue)
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
             pCarry(isSet: carryOut)
             pZero(isSet: shiftedValue == 0)
             pNegative(isSet: (shiftedValue & 0x80) != 0)
@@ -105,8 +107,8 @@ extension FAC_6502 {
             // A contains the Or'd value
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
             // Updates Negative and Zero flags
-            let location = nextWord()
-            let value = memoryRead(from: location)
+            // let location = nextWord()
+            let value = fetchValue(mode: .absolute).value      //memoryRead(from: location)
             A = A | value
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -117,11 +119,13 @@ extension FAC_6502 {
             // A contains the Or'd value
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
             // Updates Negative and Zero flags
-            let location = nextWord()
-            let value = memoryRead(from: location)
+//            let location = nextWord()
+//            let value = memoryRead(from: location)
+            let addressedValue = fetchValue(mode: .absolute)
+            let value = addressedValue.value
             let carryOut = (value & 0x80) != 0
             let shiftedValue = value << 1
-            memoryWrite(to: location, value: shiftedValue)
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
             pCarry(isSet: carryOut)
             pZero(isSet: shiftedValue == 0)
             pNegative(isSet: (shiftedValue & 0x80) != 0)
@@ -131,19 +135,37 @@ extension FAC_6502 {
             // Current understanding - BPL branches to PC + (byte 2(2s compliment)) if the status flag 'Negative' is not set
             // See https://www.pagetable.com/c64ref/6502/?tab=2#BPL
             // Flags are not affected
-            let byte2 = next()
-            if (!P.isSet(bit: 7)){
-                let page = PC.highByte()
-                let twos = byte2.twosCompliment()
-                relativeJump(twos: twos)
-                let pg = page != PC.highByte() ? 1 : 0
-                mCycles = 3 + pg
-            } else {
-                mCycles = 2
-            }
+//            let byte2 = next()
+//            if (!P.isSet(bit: 7)){
+//                let page = PC.highByte()
+//                let twos = byte2.twosCompliment()
+//                relativeJump(twos: twos)
+//                let pg = page != PC.highByte() ? 1 : 0
+//                mCycles = 3 + pg
+//            } else {
+//                mCycles = 2
+//            }
+            let value = fetchValue(mode: .relative)
+            mCycles = value.cycles
             
         case 0x11:  // ORA ind,Y
-            print(opCode)
+            // Current understanding - ORA ind,Y Or's 'A' with the page 0 contents of location ((Y + Byte 2 + 1 + carry (high)) (Y + Byte 2) (low))
+            // A contains the Or'd value
+            // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
+            // Updates Negative and Zero flags
+//            let byte2 = next()
+//            let byte2Value = memoryRead(page: 0, location: byte2)
+//            let valueLow = byte2Value &+ Y
+//            let carry = valueLow < byte2Value ? 1 : 0
+//            let byte2Value2 = memoryRead(page: 0, location: byte2 &+ 1)
+//            let valueHigh = byte2Value2 &+ UInt8(carry)
+//            let location = wordFrom(low: valueLow, high: valueHigh)
+//            let value = memoryRead(from: location)
+            let value = fetchValue(mode: .indirectY).value
+            A = A | value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 6
             
         case 0x15:  // ORA zpg,X
             print(opCode)
