@@ -38,12 +38,12 @@ extension FAC_6502 {
         S = S &- 0x1
     }
     
-    func pop(_ value: UInt8) -> UInt8 {
+    func pop() -> UInt8 {
         S = S &+ 0x1
         return memoryRead(page: 0x1, location: S)
     }
     
-    func pop(_ value: UInt16) -> UInt16 {
+    func popWord() -> UInt16 {
         S = S &+ 0x1
         let low = memoryRead(page: 0x1, location: S)
         S = S &+ 0x1

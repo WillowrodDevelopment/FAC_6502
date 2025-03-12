@@ -8,7 +8,7 @@
 import FAC_Common
 
 extension FAC_6502 {
-    func fetchValue(mode: AddressingMode) -> AddressingValue {
+    func fetchValue(mode: AddressingMode, condition: Bool = false) -> AddressingValue {
         let byte2 = next(0x00)
         let byte3 = next(0x01)
         switch mode {
@@ -20,12 +20,16 @@ extension FAC_6502 {
             return AddressingValue(value: memoryRead(from: location), location: location, cycles: 0)
         case .absoluteX:
             PC += 2
-            let location = wordFrom(low: byte2, high: byte3) &+ UInt16(X)
-            return AddressingValue(value: memoryRead(from: location), location: location, cycles: 0)
+            let address = wordFrom(low: byte2, high: byte3)
+            let location = address &+ UInt16(X)
+            let cycles = address.highByte() > location.highByte() ? 1 : 0
+            return AddressingValue(value: memoryRead(from: location), location: location, cycles: cycles)
         case .absoluteY:
             PC += 2
-            let location = wordFrom(low: byte2, high: byte3) &+ UInt16(Y)
-            return AddressingValue(value: memoryRead(from: location), location: location, cycles: 0)
+            let address = wordFrom(low: byte2, high: byte3)
+            let location = address &+ UInt16(Y)
+            let cycles = address.highByte() > location.highByte() ? 1 : 0
+            return AddressingValue(value: memoryRead(from: location), location: location, cycles: cycles)
         case .immediate:
             PC += 1
             return AddressingValue(value: byte2, location: 0x00, cycles: 0)
@@ -44,10 +48,10 @@ extension FAC_6502 {
             let byte2Value2 = memoryRead(page: 0, location: byte2 &+ 1)
             let valueHigh = byte2Value2 &+ UInt8(carry)
             let location = wordFrom(low: valueLow, high: valueHigh)
-            return AddressingValue(value: memoryRead(from: location), location: location, cycles: 0)
+            return AddressingValue(value: memoryRead(from: location), location: location, cycles: carry)
         case .relative:
             PC += 1
-            if (!P.isSet(bit: 7)){
+            if (condition){
                 let page = PC.highByte()
                 let twos = byte2.twosCompliment()
                 PC = relativeJump(twos: twos)

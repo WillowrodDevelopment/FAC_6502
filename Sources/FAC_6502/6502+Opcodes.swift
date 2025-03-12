@@ -14,7 +14,7 @@ extension FAC_6502 {
         let oldPC = PC
         let opCode = next()
         var ts = 2
-        var mCycles = 1
+        var mCycles = 2
         switch opCode {
             
             
@@ -23,7 +23,7 @@ extension FAC_6502 {
             // PC+2 is added to the stack for return and then PC jumps to the address found at WORD 0xFFFE
             // See https://en.wikipedia.org/wiki/Interrupts_in_65xx_processors
             // Sets five and brk flags
-            
+            push(P)
             push(PC &+ 0x1)
             jumpToAddressAt(0xFFFE)
             set(brk, five)
@@ -34,11 +34,6 @@ extension FAC_6502 {
             // A contains the Or'd value
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
             // Updates Negative and Zero flags
-//            let byte2 = next()
-//            let location = byte2 &+ X
-//            let valueLow = memoryRead(page: 0, location: location)
-//            let valueHigh = memoryRead(page: 0, location: location &+ 1)
-//            let value = memoryRead(from: wordFrom(low: valueLow, high: valueHigh))
             let value = fetchValue(mode: .indirectX).value
             A = A | value
             pZero(isSet: A == 0)
@@ -107,8 +102,7 @@ extension FAC_6502 {
             // A contains the Or'd value
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
             // Updates Negative and Zero flags
-            // let location = nextWord()
-            let value = fetchValue(mode: .absolute).value      //memoryRead(from: location)
+            let value = fetchValue(mode: .absolute).value
             A = A | value
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -119,8 +113,6 @@ extension FAC_6502 {
             // A contains the Or'd value
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
             // Updates Negative and Zero flags
-//            let location = nextWord()
-//            let value = memoryRead(from: location)
             let addressedValue = fetchValue(mode: .absolute)
             let value = addressedValue.value
             let carryOut = (value & 0x80) != 0
@@ -135,17 +127,7 @@ extension FAC_6502 {
             // Current understanding - BPL branches to PC + (byte 2(2s compliment)) if the status flag 'Negative' is not set
             // See https://www.pagetable.com/c64ref/6502/?tab=2#BPL
             // Flags are not affected
-//            let byte2 = next()
-//            if (!P.isSet(bit: 7)){
-//                let page = PC.highByte()
-//                let twos = byte2.twosCompliment()
-//                relativeJump(twos: twos)
-//                let pg = page != PC.highByte() ? 1 : 0
-//                mCycles = 3 + pg
-//            } else {
-//                mCycles = 2
-//            }
-            let value = fetchValue(mode: .relative)
+            let value = fetchValue(mode: .relative, condition: !P.isSet(bit: negative))
             mCycles = value.cycles
             
         case 0x11:  // ORA ind,Y
@@ -153,85 +135,179 @@ extension FAC_6502 {
             // A contains the Or'd value
             // See https://www.pagetable.com/c64ref/6502/?tab=2#ORA
             // Updates Negative and Zero flags
-//            let byte2 = next()
-//            let byte2Value = memoryRead(page: 0, location: byte2)
-//            let valueLow = byte2Value &+ Y
-//            let carry = valueLow < byte2Value ? 1 : 0
-//            let byte2Value2 = memoryRead(page: 0, location: byte2 &+ 1)
-//            let valueHigh = byte2Value2 &+ UInt8(carry)
-//            let location = wordFrom(low: valueLow, high: valueHigh)
-//            let value = memoryRead(from: location)
-            let value = fetchValue(mode: .indirectY).value
+            let value = fetchValue(mode: .indirectY)
+            A = A | value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 5 + value.cycles
+            
+        case 0x15:  // ORA zpg,X
+            let value = fetchValue(mode: .zeroPageX).value
             A = A | value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
+            
+        case 0x16:  // ASL zpg,X
+            let addressedValue = fetchValue(mode: .zeroPageX)
+            let value = addressedValue.value
+            let carryOut = (value & 0x80) != 0
+            let shiftedValue = value << 1
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 4
+            
+        case 0x18:  // CLC impl
+            reset(carry)
+            mCycles = 2
+            
+        case 0x19:  // ORA abs,Y
+            let value = fetchValue(mode: .absoluteY)
+            A = A | value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
+            
+        case 0x1D:  // ORA abs,X
+            let value = fetchValue(mode: .absoluteX)
+            A = A | value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
+            
+        case 0x1E:  // ASL abs,X
+            let addressedValue = fetchValue(mode: .absoluteX)
+            let value = addressedValue.value
+            let carryOut = (value & 0x80) != 0
+            let shiftedValue = value << 1
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 7
+            
+        case 0x20:  // JSR abs
+            push(PC + 1)
+            let value = fetchValue(mode: .absolute)
+            PC = value.location
+            
+        case 0x21:  // AND X,ind
+            let value = fetchValue(mode: .indirectX).value
+            A = A & value
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
             mCycles = 6
             
-        case 0x15:  // ORA zpg,X
-            print(opCode)
-            
-        case 0x16:  // ASL zpg,X
-            print(opCode)
-            
-        case 0x18:  // CLC impl
-            print(opCode)
-            
-        case 0x19:  // ORA abs,Y
-            print(opCode)
-            
-        case 0x1D:  // ORA abs,X
-            print(opCode)
-            
-        case 0x1E:  // ASL abs,X
-            print(opCode)
-            
-        case 0x20:  // JSR abs
-            print(opCode)
-            
-        case 0x21:  // AND X,ind
-            print(opCode)
-            
         case 0x24:  // BIT zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage).value
+            let result = A & value
+            pZero(isSet: result == 0)
+            pNegative(isSet: (value & 0x80) != 0)
+            pOverflow(isSet: (value & 0x40) != 0)
+            mCycles = 3
             
         case 0x25:  // AND zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage).value
+            A = A & value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 3
             
         case 0x26:  // ROL zpg
-            print(opCode)
+            let addressedValue = fetchValue(mode: .zeroPage)
+            let value = addressedValue.value
+            let carryOut = (value & 0x80) != 0
+            var shiftedValue = value << 1
+            shiftedValue = shiftedValue.set(bit: 0, value: P.isSet(bit: carry))
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 5
             
         case 0x28:  // PLP impl
-            print(opCode)
+            P = pop()
+            mCycles = 4
             
         case 0x29:  // AND #
-            print(opCode)
+            let value = fetchValue(mode: .immediate).value
+            A = A & value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0x2A:  // ROL A
-            print(opCode)
+            let carryOut = (A & 0x80) != 0
+            var newA = A << 1
+            newA = newA.set(bit: 0, value: P.isSet(bit: carry))
+            A = newA
+            pCarry(isSet: carryOut)
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0x2C:  // BIT abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute).value
+            let result = A & value
+            pZero(isSet: result == 0)
+            pNegative(isSet: (value & 0x80) != 0)
+            pOverflow(isSet: (value & 0x40) != 0)
+            mCycles = 4
             
         case 0x2D:  // AND abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute).value
+            A = A & value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
             
         case 0x2E:  // ROL abs
-            print(opCode)
+            let addressedValue = fetchValue(mode: .absolute)
+            let value = addressedValue.value
+            let carryOut = (value & 0x80) != 0
+            var shiftedValue = value << 1
+            shiftedValue = shiftedValue.set(bit: 0, value: P.isSet(bit: carry))
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 6
             
         case 0x30:  // BMI rel
-            print(opCode)
+            let value = fetchValue(mode: .relative, condition: P.isSet(bit: negative))
+            mCycles = value.cycles
             
         case 0x31:  // AND ind,Y
-            print(opCode)
+            let value = fetchValue(mode: .indirectY)
+            A = A & value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 5 + value.cycles
             
         case 0x35:  // AND zpg,X
-            print(opCode)
+            let value = fetchValue(mode: .zeroPageX)
+            A = A & value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 5 + value.cycles
             
         case 0x36:  // ROL zpg,X
-            print(opCode)
+            let addressedValue = fetchValue(mode: .zeroPageX)
+            let value = addressedValue.value
+            let carryOut = (value & 0x80) != 0
+            var shiftedValue = value << 1
+            shiftedValue = shiftedValue.set(bit: 0, value: P.isSet(bit: carry))
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 5
             
         case 0x38:  // SEC impl
-            print(opCode)
+            set(carry)
+            mCycles = 2
             
         case 0x39:  // AND abs,Y
             print(opCode)
@@ -240,28 +316,65 @@ extension FAC_6502 {
             print(opCode)
             
         case 0x3E:  // ROL abs,X
-            print(opCode)
+            let addressedValue = fetchValue(mode: .absoluteX)
+            let value = addressedValue.value
+            let carryOut = (value & 0x80) != 0
+            var shiftedValue = value << 1
+            shiftedValue = shiftedValue.set(bit: 0, value: P.isSet(bit: carry))
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 7
             
         case 0x40:  // RTI impl
-            print(opCode)
+            PC = popWord()
+            P = pop()
+            mCycles = 6
             
         case 0x41:  // EOR X,ind
-            print(opCode)
+            let value = fetchValue(mode: .indirectX).value
+            A = A ^ value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 6
             
         case 0x45:  // EOR zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage).value
+            A = A ^ value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 3
             
         case 0x46:  // LSR zpg
-            print(opCode)
+            let addressedValue = fetchValue(mode: .zeroPage)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            let shiftedValue = value >> 1
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 5
             
         case 0x48:  // PHA impl
-            print(opCode)
+            push(A)
+            mCycles = 3
             
         case 0x49:  // EOR #
-            print(opCode)
+            let value = fetchValue(mode: .immediate).value
+            A = A ^ value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0x4A:  // LSR A
-            print(opCode)
+            let carryOut = (A & 0x01) != 0
+            A = A >> 1
+            pCarry(isSet: carryOut)
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0x4C:  // JMP abs
             print(opCode)
@@ -270,7 +383,15 @@ extension FAC_6502 {
             print(opCode)
             
         case 0x4E:  // LSR abs
-            print(opCode)
+            let addressedValue = fetchValue(mode: .absolute)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            let shiftedValue = value >> 1
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 6
             
         case 0x50:  // BVC rel
             print(opCode)
@@ -282,7 +403,15 @@ extension FAC_6502 {
             print(opCode)
             
         case 0x56:  // LSR zpg,X
-            print(opCode)
+            let addressedValue = fetchValue(mode: .zeroPageX)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            let shiftedValue = value >> 1
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 6
             
         case 0x58:  // CLI impl
             print(opCode)
@@ -294,10 +423,19 @@ extension FAC_6502 {
             print(opCode)
             
         case 0x5E:  // LSR abs,X
-            print(opCode)
+            let addressedValue = fetchValue(mode: .absoluteX)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            let shiftedValue = value >> 1
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 5
             
         case 0x60:  // RTS impl
-            print(opCode)
+            var stackWord = popWord()
+            PC = stackWord &+ 1
             
         case 0x61:  // ADC X,ind
             print(opCode)

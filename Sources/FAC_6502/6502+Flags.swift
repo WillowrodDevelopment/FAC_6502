@@ -17,18 +17,18 @@ extension FAC_6502 {
         P = 0xD0
     }
     
-    func set(_ masks: UInt8...) {
+    func set(_ masks: Int...) {
         var mask: UInt8 = 0x00
         for m in masks {
-            mask = mask | m
+            mask = mask | 1 << m
         }
         P = P | mask
     }
     
-    func reset(_ masks: UInt8...) {
+    func reset(_ masks: Int...) {
         var mask: UInt8 = 0x00
         for m in masks {
-            mask = mask | m
+            mask = mask | 1 << m
         }
         P = P & ~mask
     }
