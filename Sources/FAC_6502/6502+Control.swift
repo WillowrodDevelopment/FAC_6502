@@ -52,11 +52,14 @@ extension FAC_6502 {
     }
     
     func jumpToAddressAt(_ location: UInt16) {
-        PC = memoryReadWord(from: 0xFFFE)
+        PC = memoryReadWord(from: location)
     }
     
     func relativeJump(twos: UInt8) -> UInt16 {
-        return PC &+ UInt16(twos & 0x7f) &- UInt16(twos & 0x80)
+        if twos == 0x80 {
+            return PC &- 0x80
+        }
+        return PC &- UInt16(twos & 0x7f) &+ UInt16(twos & 0x80)
     }
     
 }

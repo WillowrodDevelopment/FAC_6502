@@ -23,10 +23,10 @@ extension FAC_6502 {
             // PC+2 is added to the stack for return and then PC jumps to the address found at WORD 0xFFFE
             // See https://en.wikipedia.org/wiki/Interrupts_in_65xx_processors
             // Sets five and brk flags
-            push(P)
             push(PC &+ 0x1)
             jumpToAddressAt(0xFFFE)
             set(brk, five)
+            push(P)
             mCycles = 7
             
         case 0x01:  // ORA X,ind
@@ -71,6 +71,7 @@ extension FAC_6502 {
             // A is unaffected
             // See https://www.pagetable.com/c64ref/6502/?tab=2#PHP
             // Flags are not affected
+            pBreak(isSet: true)
             push(P)
             mCycles = 3
             
@@ -127,6 +128,7 @@ extension FAC_6502 {
             // Current understanding - BPL branches to PC + (byte 2(2s compliment)) if the status flag 'Negative' is not set
             // See https://www.pagetable.com/c64ref/6502/?tab=2#BPL
             // Flags are not affected
+            print("Flag: \(P.bin())")
             let value = fetchValue(mode: .relative, condition: !P.isSet(bit: negative))
             mCycles = value.cycles
             
@@ -328,8 +330,8 @@ extension FAC_6502 {
             mCycles = 7
             
         case 0x40:  // RTI impl
-            PC = popWord()
             P = pop()
+            PC = popWord()
             mCycles = 6
             
         case 0x41:  // EOR X,ind

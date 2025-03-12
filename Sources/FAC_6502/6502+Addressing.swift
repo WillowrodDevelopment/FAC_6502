@@ -57,9 +57,12 @@ extension FAC_6502 {
             return AddressingValue(value: memoryRead(from: location), location: location, cycles: carry)
         case .relative:
             PC = PC &+ 1
+            
+            print("Condition: \(condition)")
             if (condition){
                 let page = PC.highByte()
                 let twos = byte2.twosCompliment()
+                print("Byte2: \(byte2) - Twos: \(twos)")
                 PC = relativeJump(twos: twos)
                 let pg = page != PC.highByte() ? 1 : 0
                 return AddressingValue(value: 0x00, location: PC, cycles: 3 + pg)
