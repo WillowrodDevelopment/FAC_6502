@@ -65,4 +65,13 @@ extension FAC_6502 {
         P = P.set(bit: 7, value: isSet)
     }
     
+    func bitValue(_ bit: Int) -> UInt8 {
+        let mask = UInt8(1 << bit)
+        return (P & mask) >> bit
+    }
+    
+    func pMask(_ mask: Int) -> UInt8 {
+        return P & UInt8(1 << mask)
+    }
+    
 }

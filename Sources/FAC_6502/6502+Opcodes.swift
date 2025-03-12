@@ -377,10 +377,15 @@ extension FAC_6502 {
             mCycles = 2
             
         case 0x4C:  // JMP abs
-            print(opCode)
+            PC = fetchValue(mode: .absolute).location
+            mCycles = 3
             
         case 0x4D:  // EOR abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute).value
+            A = A ^ value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
             
         case 0x4E:  // LSR abs
             let addressedValue = fetchValue(mode: .absolute)
@@ -394,13 +399,22 @@ extension FAC_6502 {
             mCycles = 6
             
         case 0x50:  // BVC rel
-            print(opCode)
+            let value = fetchValue(mode: .relative, condition: !P.isSet(bit: overflow))
+            mCycles = value.cycles
             
         case 0x51:  // EOR ind,Y
-            print(opCode)
+            let value = fetchValue(mode: .indirectY)
+            A = A ^ value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 5 + value.cycles
             
         case 0x55:  // EOR zpg,X
-            print(opCode)
+            let value = fetchValue(mode: .zeroPageX)
+            A = A ^ value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
             
         case 0x56:  // LSR zpg,X
             let addressedValue = fetchValue(mode: .zeroPageX)
@@ -414,13 +428,22 @@ extension FAC_6502 {
             mCycles = 6
             
         case 0x58:  // CLI impl
-            print(opCode)
+            reset(interupt)
+            mCycles = 2
             
         case 0x59:  // EOR abs,Y
-            print(opCode)
+            let value = fetchValue(mode: .absoluteY)
+            A = A ^ value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0x5D:  // EOR abs,X
-            print(opCode)
+            let value = fetchValue(mode: .absoluteX)
+            A = A ^ value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0x5E:  // LSR abs,X
             let addressedValue = fetchValue(mode: .absoluteX)
@@ -438,244 +461,573 @@ extension FAC_6502 {
             PC = stackWord &+ 1
             
         case 0x61:  // ADC X,ind
-            print(opCode)
+            let value = fetchValue(mode: .indirectX)
+            let carryBit = bitValue(carry)
+            let changeValue = value.value &+ carryBit
+            let newA = A &+ changeValue
+            let carryValue = (newA < A || (newA == A && carryBit > 0))
+            pCarry(isSet: carryValue)
+            let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
+            pOverflow(isSet: overflowValue)
+            A = newA
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 6
             
         case 0x65:  // ADC zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage)
+            let carryBit = bitValue(carry)
+            let changeValue = value.value &+ carryBit
+            let newA = A &+ changeValue
+            let carryValue = (newA < A || (newA == A && carryBit > 0))
+            pCarry(isSet: carryValue)
+            let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
+            pOverflow(isSet: overflowValue)
+            A = newA
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 3
             
         case 0x66:  // ROR zpg
-            print(opCode)
+            let addressedValue = fetchValue(mode: .zeroPage)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            var shiftedValue = value >> 1
+            shiftedValue = shiftedValue.set(bit: 7, value: bitValue(carry))
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 5
             
         case 0x68:  // PLA impl
             print(opCode)
             
         case 0x69:  // ADC #
-            print(opCode)
+            let value = fetchValue(mode: .immediate)
+            let carryBit = bitValue(carry)
+            let changeValue = value.value &+ carryBit
+            let newA = A &+ changeValue
+            let carryValue = (newA < A || (newA == A && carryBit > 0))
+            pCarry(isSet: carryValue)
+            let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
+            pOverflow(isSet: overflowValue)
+            A = newA
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0x6A:  // ROR A
-            print(opCode)
+            let addressedValue = fetchValue(mode: .accumilator)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            var shiftedValue = value >> 1
+            shiftedValue = shiftedValue.set(bit: 7, value: bitValue(carry))
+            A = shiftedValue
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 2
             
         case 0x6C:  // JMP ind
-            print(opCode)
+            PC = fetchValue(mode: .absoluteIndirect).location
+            mCycles = 5
             
         case 0x6D:  // ADC abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute)
+            let carryBit = bitValue(carry)
+            let changeValue = value.value &+ carryBit
+            let newA = A &+ changeValue
+            let carryValue = (newA < A || (newA == A && carryBit > 0))
+            pCarry(isSet: carryValue)
+            let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
+            pOverflow(isSet: overflowValue)
+            A = newA
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
             
         case 0x6E:  // ROR abs
-            print(opCode)
+            let addressedValue = fetchValue(mode: .absolute)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            var shiftedValue = value >> 1
+            shiftedValue = shiftedValue.set(bit: 7, value: bitValue(carry))
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 6
             
         case 0x70:  // BVS rel
-            print(opCode)
+            let value = fetchValue(mode: .relative, condition: P.isSet(bit: overflow))
+            mCycles = value.cycles
             
         case 0x71:  // ADC ind,Y
-            print(opCode)
+            let value = fetchValue(mode: .indirectY)
+            let carryBit = bitValue(carry)
+            let changeValue = value.value &+ carryBit
+            let newA = A &+ changeValue
+            let carryValue = (newA < A || (newA == A && carryBit > 0))
+            pCarry(isSet: carryValue)
+            let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
+            pOverflow(isSet: overflowValue)
+            A = newA
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 5 + value.cycles
             
         case 0x75:  // ADC zpg,X
-            print(opCode)
+            let value = fetchValue(mode: .zeroPageX)
+            let carryBit = bitValue(carry)
+            let changeValue = value.value &+ carryBit
+            let newA = A &+ changeValue
+            let carryValue = (newA < A || (newA == A && carryBit > 0))
+            pCarry(isSet: carryValue)
+            let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
+            pOverflow(isSet: overflowValue)
+            A = newA
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
             
         case 0x76:  // ROR zpg,X
-            print(opCode)
+            let addressedValue = fetchValue(mode: .zeroPageX)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            var shiftedValue = value >> 1
+            shiftedValue = shiftedValue.set(bit: 7, value: bitValue(carry))
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 6
             
         case 0x78:  // SEI impl
-            print(opCode)
+            set(interupt)
+            mCycles = 2
             
         case 0x79:  // ADC abs,Y
-            print(opCode)
+            let value = fetchValue(mode: .absoluteY)
+            let carryBit = bitValue(carry)
+            let changeValue = value.value &+ carryBit
+            let newA = A &+ changeValue
+            let carryValue = (newA < A || (newA == A && carryBit > 0))
+            pCarry(isSet: carryValue)
+            let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
+            pOverflow(isSet: overflowValue)
+            A = newA
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0x7D:  // ADC abs,X
-            print(opCode)
+            let value = fetchValue(mode: .absoluteX)
+            let carryBit = bitValue(carry)
+            let changeValue = value.value &+ carryBit
+            let newA = A &+ changeValue
+            let carryValue = (newA < A || (newA == A && carryBit > 0))
+            pCarry(isSet: carryValue)
+            let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
+            pOverflow(isSet: overflowValue)
+            A = newA
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0x7E:  // ROR abs,X
-            print(opCode)
+            let addressedValue = fetchValue(mode: .absoluteX)
+            let value = addressedValue.value
+            let carryOut = (value & 0x01) != 0
+            var shiftedValue = value >> 1
+            shiftedValue = shiftedValue.set(bit: 7, value: bitValue(carry))
+            memoryWrite(to: addressedValue.location, value: shiftedValue)
+            pCarry(isSet: carryOut)
+            pZero(isSet: shiftedValue == 0)
+            pNegative(isSet: (shiftedValue & 0x80) != 0)
+            mCycles = 7
             
         case 0x81:  // STA X,ind
-            print(opCode)
+            let value = fetchValue(mode: .indirectX)
+            memoryWrite(to: value.location, value: A)
+            mCycles = 6
             
         case 0x84:  // STY zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage)
+            memoryWrite(to: value.location, value: Y)
+            mCycles = 3
             
         case 0x85:  // STA zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage)
+            memoryWrite(to: value.location, value: A)
+            mCycles = 3
             
         case 0x86:  // STX zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage)
+            memoryWrite(to: value.location, value: X)
+            mCycles = 3
             
         case 0x88:  // DEY impl
-            print(opCode)
+            Y = Y &- 1
+            pZero(isSet: Y == 0)
+            pNegative(isSet: (Y & 0x80) != 0)
+            mCycles = 2
             
         case 0x8A:  // TXA impl
-            print(opCode)
+            A = X
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0x8C:  // STY abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute)
+            memoryWrite(to: value.location, value: Y)
+            mCycles = 4
             
         case 0x8D:  // STA abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute)
+            memoryWrite(to: value.location, value: A)
+            mCycles = 4
             
         case 0x8E:  // STX abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute)
+            memoryWrite(to: value.location, value: X)
+            mCycles = 4
             
         case 0x90:  // BCC rel
-            print(opCode)
+            let value = fetchValue(mode: .relative, condition: !P.isSet(bit: carry))
+            mCycles = value.cycles
             
         case 0x91:  // STA ind,Y
-            print(opCode)
+            let value = fetchValue(mode: .indirectY)
+            memoryWrite(to: value.location, value: A)
+            mCycles = 6
             
         case 0x94:  // STY zpg,X
-            print(opCode)
+            let value = fetchValue(mode: .zeroPageX)
+            memoryWrite(to: value.location, value: Y)
+            mCycles = 4
             
         case 0x95:  // STA zpg,X
-            print(opCode)
+            let value = fetchValue(mode: .zeroPageX)
+            memoryWrite(to: value.location, value: A)
+            mCycles = 4
             
         case 0x96:  // STX zpg,Y
-            print(opCode)
+            let value = fetchValue(mode: .zeroPageY)
+            memoryWrite(to: value.location, value: X)
+            mCycles = 4
             
         case 0x98:  // TYA impl
-            print(opCode)
+            A = Y
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0x99:  // STA abs,Y
-            print(opCode)
+            let value = fetchValue(mode: .absoluteY)
+            memoryWrite(to: value.location, value: A)
+            mCycles = 5
             
         case 0x9A:  // TXS impl
-            print(opCode)
+            push(X)
+            mCycles = 2
             
         case 0x9D:  // STA abs,X
-            print(opCode)
+            let value = fetchValue(mode: .absoluteX)
+            memoryWrite(to: value.location, value: A)
+            mCycles = 5
             
         case 0xA0:  // LDY #
-            print(opCode)
+            Y = fetchValue(mode: .immediate).value
+            pZero(isSet: Y == 0)
+            pNegative(isSet: (Y & 0x80) != 0)
+            mCycles = 2
             
         case 0xA1:  // LDA X,ind
-            print(opCode)
+            A = fetchValue(mode: .indirectX).value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 6
             
         case 0xA2:  // LDX #
-            print(opCode)
+            X = fetchValue(mode: .immediate).value
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
+            mCycles = 2
             
         case 0xA4:  // LDY zpg
-            print(opCode)
+            Y = fetchValue(mode: .zeroPage).value
+            pZero(isSet: Y == 0)
+            pNegative(isSet: (Y & 0x80) != 0)
+            mCycles = 3
             
         case 0xA5:  // LDA zpg
-            print(opCode)
+            A = fetchValue(mode: .zeroPage).value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 3
             
         case 0xA6:  // LDX zpg
-            print(opCode)
+            X = fetchValue(mode: .zeroPage).value
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
+            mCycles = 3
             
         case 0xA8:  // TAY impl
             print(opCode)
             
         case 0xA9:  // LDA #
-            print(opCode)
+            A = fetchValue(mode: .immediate).value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 2
             
         case 0xAA:  // TAX impl
             print(opCode)
             
         case 0xAC:  // LDY abs
-            print(opCode)
+            Y = fetchValue(mode: .absolute).value
+            pZero(isSet: Y == 0)
+            pNegative(isSet: (Y & 0x80) != 0)
+            mCycles = 4
             
         case 0xAD:  // LDA abs
-            print(opCode)
+            A = fetchValue(mode: .absolute).value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
             
         case 0xAE:  // LDX abs
-            print(opCode)
+            X = fetchValue(mode: .absolute).value
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
+            mCycles = 4
             
         case 0xB0:  // BCS rel
-            print(opCode)
+            let value = fetchValue(mode: .relative, condition: P.isSet(bit: carry))
+            mCycles = value.cycles
             
         case 0xB1:  // LDA ind,Y
-            print(opCode)
+            let value = fetchValue(mode: .indirectY)
+            A = value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 5 + value.cycles
             
         case 0xB4:  // LDY zpg,X
-            print(opCode)
+            Y = fetchValue(mode: .zeroPageX).value
+            pZero(isSet: Y == 0)
+            pNegative(isSet: (Y & 0x80) != 0)
+            mCycles = 4
             
         case 0xB5:  // LDA zpg,X
-            print(opCode)
+            A = fetchValue(mode: .zeroPageX).value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4
             
         case 0xB6:  // LDX zpg,Y
-            print(opCode)
+            X = fetchValue(mode: .zeroPageY).value
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
+            mCycles = 4
             
         case 0xB8:  // CLV impl
-            print(opCode)
+            reset(overflow)
+            mCycles = 2
             
         case 0xB9:  // LDA abs,Y
-            print(opCode)
+            let value = fetchValue(mode: .absoluteY)
+            A = value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0xBA:  // TSX impl
-            print(opCode)
+            X = P
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
+            mCycles = 2
             
         case 0xBC:  // LDY abs,X
-            print(opCode)
+            let value = fetchValue(mode: .absoluteX)
+            Y = value.value
+            pZero(isSet: Y == 0)
+            pNegative(isSet: (Y & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0xBD:  // LDA abs,X
-            print(opCode)
+            let value = fetchValue(mode: .absoluteX)
+            A = value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0xBE:  // LDX abs,Y
-            print(opCode)
+            let value = fetchValue(mode: .absoluteY)
+            X = value.value
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0xC0:  // CPY #
-            print(opCode)
+            let value = fetchValue(mode: .immediate).value
+            pCarry(isSet: Y >= value)
+            pZero(isSet: Y == value)
+            pNegative(isSet: Y < value)
+            mCycles = 2
+            
             
         case 0xC1:  // CMP X,ind
-            print(opCode)
+            let value = fetchValue(mode: .indirectX).value
+            pCarry(isSet: A >= value)
+            pZero(isSet: A == value)
+            pNegative(isSet: A < value)
+            mCycles = 6
             
         case 0xC4:  // CPY zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage).value
+            pCarry(isSet: Y >= value)
+            pZero(isSet: Y == value)
+            pNegative(isSet: Y < value)
+            mCycles = 3
             
         case 0xC5:  // CMP zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage).value
+            pCarry(isSet: A >= value)
+            pZero(isSet: A == value)
+            pNegative(isSet: A < value)
+            mCycles = 3
             
         case 0xC6:  // DEC zpg
-            print(opCode)
+            let addressedValue = fetchValue(mode: .zeroPage)
+            let value = addressedValue.value &- 1
+            memoryWrite(to: addressedValue.location, value: value)
+            pZero(isSet: value == 0)
+            pNegative(isSet: (value & 0x80) != 0)
+            mCycles = 5
             
         case 0xC8:  // INY impl
-            print(opCode)
+            Y = Y &+ 1
+            pZero(isSet: Y == 0)
+            pNegative(isSet: (Y & 0x80) != 0)
+            mCycles = 2
             
         case 0xC9:  // CMP #
-            print(opCode)
+            let value = fetchValue(mode: .immediate).value
+            pCarry(isSet: A >= value)
+            pZero(isSet: A == value)
+            pNegative(isSet: A < value)
+            mCycles = 2
             
         case 0xCA:  // DEX impl
-            print(opCode)
+            X = X &- 1
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
+            mCycles = 2
             
         case 0xCC:  // CPY abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute).value
+            pCarry(isSet: Y >= value)
+            pZero(isSet: Y == value)
+            pNegative(isSet: Y < value)
+            mCycles = 4
             
         case 0xCD:  // CMP abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute).value
+            pCarry(isSet: A >= value)
+            pZero(isSet: A == value)
+            pNegative(isSet: A < value)
+            mCycles = 4
             
         case 0xCE:  // DEC abs
-            print(opCode)
+            let addressedValue = fetchValue(mode: .absolute)
+            let value = addressedValue.value &- 1
+            memoryWrite(to: addressedValue.location, value: value)
+            pZero(isSet: value == 0)
+            pNegative(isSet: (value & 0x80) != 0)
+            mCycles = 6
             
         case 0xD0:  // BNE rel
-            print(opCode)
+            let value = fetchValue(mode: .relative, condition: !P.isSet(bit: zero))
+            mCycles = value.cycles
             
         case 0xD1:  // CMP ind,Y
-            print(opCode)
+            let addressingValue = fetchValue(mode: .indirectY)
+            let value = addressingValue.value
+            pCarry(isSet: A >= value)
+            pZero(isSet: A == value)
+            pNegative(isSet: A < value)
+            mCycles = 5 + addressingValue.cycles
             
         case 0xD5:  // CMP zpg,X
-            print(opCode)
+            let value = fetchValue(mode: .zeroPageX).value
+            pCarry(isSet: A >= value)
+            pZero(isSet: A == value)
+            pNegative(isSet: A < value)
+            mCycles = 4
             
         case 0xD6:  // DEC zpg,X
-            print(opCode)
+            let addressedValue = fetchValue(mode: .zeroPageX)
+            let value = addressedValue.value &- 1
+            memoryWrite(to: addressedValue.location, value: value)
+            pZero(isSet: value == 0)
+            pNegative(isSet: (value & 0x80) != 0)
+            mCycles = 6
             
         case 0xD8:  // CLD impl
-            print(opCode)
+            reset(decimal)
+            mCycles = 2
             
         case 0xD9:  // CMP abs,Y
-            print(opCode)
+            let addressingValue = fetchValue(mode: .absoluteY)
+            let value = addressingValue.value
+            pCarry(isSet: A >= value)
+            pZero(isSet: A == value)
+            pNegative(isSet: A < value)
+            mCycles = 4 + addressingValue.cycles
             
         case 0xDD:  // CMP abs,X
-            print(opCode)
+            let addressingValue = fetchValue(mode: .absoluteX)
+            let value = addressingValue.value
+            pCarry(isSet: A >= value)
+            pZero(isSet: A == value)
+            pNegative(isSet: A < value)
+            mCycles = 4 + addressingValue.cycles
             
         case 0xDE:  // DEC abs,X
-            print(opCode)
+            let addressedValue = fetchValue(mode: .absoluteX)
+            let value = addressedValue.value &- 1
+            memoryWrite(to: addressedValue.location, value: value)
+            pZero(isSet: value == 0)
+            pNegative(isSet: (value & 0x80) != 0)
+            mCycles = 7
             
         case 0xE0:  // CPX #
-            print(opCode)
+            let value = fetchValue(mode: .immediate).value
+            pCarry(isSet: X >= value)
+            pZero(isSet: X == value)
+            pNegative(isSet: X < value)
+            mCycles = 2
             
         case 0xE1:  // SBC X,ind
-            print(opCode)
+            let borrow = 1 - bitValue(carry)
+            let value = fetchValue(mode: .immediate).value &+ borrow
+            let twos = value.twosCompliment()
+            
+            pCarry(isSet: X >= value)
+            pZero(isSet: X == value)
+            pNegative(isSet: X < value)
+            mCycles = 2
+            
             
         case 0xE4:  // CPX zpg
-            print(opCode)
+            let value = fetchValue(mode: .zeroPage).value
+            pCarry(isSet: X >= value)
+            pZero(isSet: X == value)
+            pNegative(isSet: X < value)
+            mCycles = 3
             
         case 0xE5:  // SBC zpg
             print(opCode)
@@ -684,7 +1036,10 @@ extension FAC_6502 {
             print(opCode)
             
         case 0xE8:  // INX impl
-            print(opCode)
+            X = X &+ 1
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
+            mCycles = 2
             
         case 0xE9:  // SBC #
             print(opCode)
@@ -693,7 +1048,11 @@ extension FAC_6502 {
             print(opCode)
             
         case 0xEC:  // CPX abs
-            print(opCode)
+            let value = fetchValue(mode: .absolute).value
+            pCarry(isSet: X >= value)
+            pZero(isSet: X == value)
+            pNegative(isSet: X < value)
+            mCycles = 4
             
         case 0xED:  // SBC abs
             print(opCode)
@@ -702,7 +1061,8 @@ extension FAC_6502 {
             print(opCode)
             
         case 0xF0:  // BEQ rel
-            print(opCode)
+            let value = fetchValue(mode: .relative, condition: P.isSet(bit: zero))
+            mCycles = value.cycles
             
         case 0xF1:  // SBC ind,Y
             print(opCode)
@@ -714,7 +1074,8 @@ extension FAC_6502 {
             print(opCode)
             
         case 0xF8:  // SED impl
-            print(opCode)
+            set(decimal)
+            mCycles = 2
             
         case 0xF9:  // SBC abs,Y
             print(opCode)

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class FAC_6502 {
+open class FAC_6502 {
     
     public var rom:[[UInt8]] = []
     public var ram:[[UInt8]] = [Array(repeating: 0x00, count: 0x10000)]
@@ -53,5 +53,14 @@ public class FAC_6502 {
     
     public func test1() -> Int {
         return 6502
+    }
+    
+    public func resetProcessor(){
+        A = 0x00
+        P = 0x00
+        X = 0x00
+        Y = 0x00
+        S = 0xFF
+        ram[0] = Array(repeating: 0x00, count: 0x10000)
     }
 }
