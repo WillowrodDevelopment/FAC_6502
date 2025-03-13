@@ -128,7 +128,6 @@ extension FAC_6502 {
             // Current understanding - BPL branches to PC + (byte 2(2s compliment)) if the status flag 'Negative' is not set
             // See https://www.pagetable.com/c64ref/6502/?tab=2#BPL
             // Flags are not affected
-            print("Flag: \(P.bin())")
             let value = fetchValue(mode: .relative, condition: !P.isSet(bit: negative))
             mCycles = value.cycles
             
@@ -191,9 +190,11 @@ extension FAC_6502 {
             mCycles = 7
             
         case 0x20:  // JSR abs
-            push(PC + 1)
-            let value = fetchValue(mode: .absolute)
-            PC = value.location
+            let byte2 = next()
+            push(PC)
+            let byte3 = next()
+            PC = wordFrom(low: byte2, high: byte3)
+            mCycles = 6
             
         case 0x21:  // AND X,ind
             let value = fetchValue(mode: .indirectX).value
@@ -312,10 +313,18 @@ extension FAC_6502 {
             mCycles = 2
             
         case 0x39:  // AND abs,Y
-            print(opCode)
+            let value = fetchValue(mode: .absoluteY)
+            A = A & value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0x3D:  // AND abs,X
-            print(opCode)
+            let value = fetchValue(mode: .absoluteX)
+            A = A & value.value
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 4 + value.cycles
             
         case 0x3E:  // ROL abs,X
             let addressedValue = fetchValue(mode: .absoluteX)

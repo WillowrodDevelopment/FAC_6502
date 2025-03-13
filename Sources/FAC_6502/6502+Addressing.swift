@@ -17,12 +17,12 @@ extension FAC_6502 {
         case .absolute:
             PC = PC &+ 2
             let location = wordFrom(low: byte2, high: byte3)
-            return AddressingValue(value: memoryRead(from: location), location: location, cycles: 0)
+            let value = memoryRead(from: location)
+            return AddressingValue(value: value, location: location, cycles: 0)
         case .absoluteIndirect:
             PC = PC &+ 2
             let locationLow = memoryRead(page: byte3, location: byte2)
             let locationHigh = memoryRead(page: byte3, location: byte2 &+ 1)
-            
             return AddressingValue(value: 0x0, location: wordFrom(low: locationLow, high: locationHigh), cycles: 0)
         case .absoluteX:
             PC = PC &+ 2
@@ -57,12 +57,9 @@ extension FAC_6502 {
             return AddressingValue(value: memoryRead(from: location), location: location, cycles: carry)
         case .relative:
             PC = PC &+ 1
-            
-            print("Condition: \(condition)")
             if (condition){
                 let page = PC.highByte()
                 let twos = byte2.twosCompliment()
-                print("Byte2: \(byte2) - Twos: \(twos)")
                 PC = relativeJump(twos: twos)
                 let pg = page != PC.highByte() ? 1 : 0
                 return AddressingValue(value: 0x00, location: PC, cycles: 3 + pg)
