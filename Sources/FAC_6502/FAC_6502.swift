@@ -63,4 +63,10 @@ open class FAC_6502 {
         S = 0xFF
         ram[0] = Array(repeating: 0x00, count: 0x10000)
     }
+    
+    public func logOut() {
+        print("Actual values:\nPC: \(PC.toLog())\nS: \(S.toLog())\nA: \(A.toLog())\nP: \(P.toLog())\nX: \(X.toLog())\nY: \(Y.toLog())")
+    }
+    
+    
 }

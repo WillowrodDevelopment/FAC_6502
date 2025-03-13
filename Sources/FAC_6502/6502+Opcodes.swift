@@ -475,23 +475,20 @@ extension FAC_6502 {
             let value = fetchValue(mode: .indirectX)
             let carryBit = bitValue(carry)
             let changeValue = value.value &+ carryBit
-            let newA = A &+ changeValue
-            let carryValue = (newA < A || (newA == A && carryBit > 0))
-            pCarry(isSet: carryValue)
+            let newA = adc(A, value.value)
             let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
             pOverflow(isSet: overflowValue)
             A = newA
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
+         //   logOut()
             mCycles = 6
             
         case 0x65:  // ADC zpg
             let value = fetchValue(mode: .zeroPage)
             let carryBit = bitValue(carry)
             let changeValue = value.value &+ carryBit
-            let newA = A &+ changeValue
-            let carryValue = (newA < A || (newA == A && carryBit > 0))
-            pCarry(isSet: carryValue)
+            let newA = adc(A, value.value)
             let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
             pOverflow(isSet: overflowValue)
             A = newA
@@ -512,13 +509,16 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x68:  // PLA impl
-            print(opCode)
+            A = pop()
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 3
             
         case 0x69:  // ADC #
             let value = fetchValue(mode: .immediate)
             let carryBit = bitValue(carry)
             let changeValue = value.value &+ carryBit
-            let newA = A &+ changeValue
+            let newA = adc(A, value.value)
             let carryValue = (newA < A || (newA == A && carryBit > 0))
             pCarry(isSet: carryValue)
             let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
@@ -548,7 +548,7 @@ extension FAC_6502 {
             let value = fetchValue(mode: .absolute)
             let carryBit = bitValue(carry)
             let changeValue = value.value &+ carryBit
-            let newA = A &+ changeValue
+            let newA = adc(A, value.value)
             let carryValue = (newA < A || (newA == A && carryBit > 0))
             pCarry(isSet: carryValue)
             let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
@@ -578,7 +578,7 @@ extension FAC_6502 {
             let value = fetchValue(mode: .indirectY)
             let carryBit = bitValue(carry)
             let changeValue = value.value &+ carryBit
-            let newA = A &+ changeValue
+            let newA = adc(A, value.value)
             let carryValue = (newA < A || (newA == A && carryBit > 0))
             pCarry(isSet: carryValue)
             let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
@@ -592,7 +592,7 @@ extension FAC_6502 {
             let value = fetchValue(mode: .zeroPageX)
             let carryBit = bitValue(carry)
             let changeValue = value.value &+ carryBit
-            let newA = A &+ changeValue
+            let newA = adc(A, value.value)
             let carryValue = (newA < A || (newA == A && carryBit > 0))
             pCarry(isSet: carryValue)
             let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
@@ -622,7 +622,7 @@ extension FAC_6502 {
             let value = fetchValue(mode: .absoluteY)
             let carryBit = bitValue(carry)
             let changeValue = value.value &+ carryBit
-            let newA = A &+ changeValue
+            let newA = adc(A, value.value)
             let carryValue = (newA < A || (newA == A && carryBit > 0))
             pCarry(isSet: carryValue)
             let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
@@ -636,7 +636,7 @@ extension FAC_6502 {
             let value = fetchValue(mode: .absoluteX)
             let carryBit = bitValue(carry)
             let changeValue = value.value &+ carryBit
-            let newA = A &+ changeValue
+            let newA = adc(A, value.value)
             let carryValue = (newA < A || (newA == A && carryBit > 0))
             pCarry(isSet: carryValue)
             let overflowValue = changeValue.isSet(bit: 7) != newA.isSet(bit: 7)
@@ -741,7 +741,9 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x9A:  // TXS impl
-            push(X)
+            S = X
+            pZero(isSet: X == 0)
+            pNegative(isSet: (X & 0x80) != 0)
             mCycles = 2
             
         case 0x9D:  // STA abs,X
@@ -1107,4 +1109,5 @@ extension FAC_6502 {
         //     LoggingService.shared.logProcessor(oldPC, opCode: opCode.hex(), message: nil)
         //  }
     }
+
 }
