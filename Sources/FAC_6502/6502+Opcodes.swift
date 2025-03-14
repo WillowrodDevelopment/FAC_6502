@@ -788,7 +788,10 @@ extension FAC_6502 {
             mCycles = 3
             
         case 0xA8:  // TAY impl
-            print(opCode)
+            Y = A
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 3
             
         case 0xA9:  // LDA #
             A = fetchValue(mode: .immediate).value
@@ -797,7 +800,10 @@ extension FAC_6502 {
             mCycles = 2
             
         case 0xAA:  // TAX impl
-            print(opCode)
+            X = A
+            pZero(isSet: A == 0)
+            pNegative(isSet: (A & 0x80) != 0)
+            mCycles = 3
             
         case 0xAC:  // LDY abs
             Y = fetchValue(mode: .absolute).value
@@ -858,7 +864,7 @@ extension FAC_6502 {
             mCycles = 4 + value.cycles
             
         case 0xBA:  // TSX impl
-            X = P
+            X = S
             pZero(isSet: X == 0)
             pNegative(isSet: (X & 0x80) != 0)
             mCycles = 2
