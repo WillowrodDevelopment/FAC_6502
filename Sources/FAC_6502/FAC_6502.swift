@@ -1,5 +1,5 @@
 //
-//  650x.swift
+//  .swift
 //  FAC_650x
 //
 //  Created by Mike Hall on 06/03/2025.
@@ -9,6 +9,9 @@ import Foundation
 
 open class FAC_6502 {
     
+    
+    public var clockCyclesPerFrame = Int(1.108 * BASE_CPU_CLOCK_SPEED) // For PAL Vic20 (1.108Mhz)
+    
     public var rom:[[UInt8]] = []
     public var ram:[[UInt8]] = [Array(repeating: 0x00, count: 0x10000)]
     
@@ -16,15 +19,6 @@ open class FAC_6502 {
     public var A: UInt8 = 0x00
     // Flags
     public var P: UInt8 = 0x00     //   NV-BDIZC
-    
-//    let carry: UInt8 = 0x01
-//    let zero: UInt8 = 0x02
-//    let interupt: UInt8 = 0x04
-//    let decimal: UInt8 = 0x08
-//    let brk: UInt8 = 0x10
-//    let five: UInt8 = 0x20
-//    let overflow: UInt8 = 0x40
-//    let negative: UInt8 = 0x80
     
     let carry: Int = 0
     let zero: Int = 1
@@ -44,11 +38,21 @@ open class FAC_6502 {
     
     public var cycleCount = 0
     
+
+    public var shouldProcess = false
+
+    var frameCompleted = false
+    var frameStarted: TimeInterval = Date().timeIntervalSince1970
+    
     public init() {
     }
     
     public func test() {
         print("6502 CPU")
+    }
+    
+    public func setProcessorSpeed(mhz: Double){
+        clockCyclesPerFrame = Int(mhz * BASE_CPU_CLOCK_SPEED)
     }
     
     public func test1() -> Int {
@@ -68,5 +72,31 @@ open class FAC_6502 {
         print("Actual values:\nPC: \(PC.toLog())\nS: \(S.toLog())\nA: \(A.toLog())\nP: \(P.toLog())\nX: \(X.toLog())\nY: \(Y.toLog())")
     }
     
+    public func startProcess() {
+        Task {
+            await process()
+        }
+    }
+    
+    open func fps() {
+        
+//        if controller.processorSpeed != .paused {
+//            let seconds = Int(Date().timeIntervalSince1970 - startTime)
+//            frames += 1
+//            if seconds > secondsValue {
+//                secondsValue = seconds
+//                controller.lastSecondValue = frames// / seconds
+//                frames = 0
+//                
+//            }
+//        } else {
+//            controller.lastSecondValue = 0
+//        }
+    }
+    
+    open func display() {
+        // Override to handle screen writes
+        fps()
+    }
     
 }
