@@ -1,0 +1,15 @@
+{
+  "originHash" : "759d7185a08ea108eac6a4749758f4b4a634ef3ab5cf2ab244c8ce926a35e923",
+  "pins" : [
+    {
+      "identity" : "fac_common",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Willowrod/FAC_Common.git",
+      "state" : {
+        "revision" : "f43daa4827c7bf394bc9b51c4680c5d46455862f",
+        "version" : "1.0.2"
+      }
+    }
+  ],
+  "version" : 3
+}
