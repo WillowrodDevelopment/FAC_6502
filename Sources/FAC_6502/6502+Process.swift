@@ -7,10 +7,10 @@
 
 import Foundation
 
-extension FAC_6502 {
+public extension FAC_6502 {
     public func process() {
         shouldProcess = true
-        resetProcessor()
+        //resetProcessor()
         //standard()
         while shouldProcess {
 //            if controller.processorSpeed == .paused {

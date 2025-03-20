@@ -8,11 +8,11 @@
 import Foundation
 import FAC_Common
 
-extension FAC_6502 {
+public extension FAC_6502 {
     
     public func fetchAndExecute() {
-        let oldPC = PC
-        let opCode = next()
+        oldPC = PC
+        opCode = next()
         var ts = 2
         var mCycles = 2
         switch opCode {
@@ -23,6 +23,7 @@ extension FAC_6502 {
             // PC+2 is added to the stack for return and then PC jumps to the address found at WORD 0xFFFE
             // See https://en.wikipedia.org/wiki/Interrupts_in_65xx_processors
             // Sets five and brk flags
+            //print("\(oldPC.hex()): \(opCode.hex())")
             push(PC &+ 0x1)
             jumpToAddressAt(0xFFFE)
             pBreak(isSet: true)
@@ -73,6 +74,7 @@ extension FAC_6502 {
             // A is unaffected
             // See https://www.pagetable.com/c64ref/6502/?tab=2#PHP
             // Flags are not affected
+            //print("\(oldPC.hex()): \(opCode.hex())")
             pBreak(isSet: true)
             push(P)
             pBreak(isSet: false)
@@ -164,6 +166,7 @@ extension FAC_6502 {
             mCycles = 4
             
         case 0x18:  // CLC impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             reset(carry)
             mCycles = 2
             
@@ -196,6 +199,7 @@ extension FAC_6502 {
             let byte2 = next()
             push(PC)
             let byte3 = next()
+            //print("\(oldPC.hex()): \(opCode.hex()) \(byte2.hex()) \(byte3.hex())")
             PC = wordFrom(low: byte2, high: byte3)
             mCycles = 6
             
@@ -234,6 +238,7 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x28:  // PLP impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             P = pop()
             pBreak(isSet: false)
             pFive(isSet: true)
@@ -314,6 +319,7 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x38:  // SEC impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             set(carry)
             mCycles = 2
             
@@ -344,6 +350,7 @@ extension FAC_6502 {
             mCycles = 7
             
         case 0x40:  // RTI impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             P = pop()
             PC = popWord()
             pBreak(isSet: false)
@@ -376,6 +383,7 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x48:  // PHA impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             push(A)
             mCycles = 3
             
@@ -446,6 +454,7 @@ extension FAC_6502 {
             mCycles = 6
             
         case 0x58:  // CLI impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             reset(interupt)
             mCycles = 2
             
@@ -475,6 +484,7 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x60:  // RTS impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             var stackWord = popWord()
             PC = stackWord &+ 1
             
@@ -501,6 +511,7 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x68:  // PLA impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             A = pop()
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -571,6 +582,7 @@ extension FAC_6502 {
             mCycles = 6
             
         case 0x78:  // SEI impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             set(interupt)
             mCycles = 2
             
@@ -617,12 +629,14 @@ extension FAC_6502 {
             mCycles = 3
             
         case 0x88:  // DEY impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             Y = Y &- 1
             pZero(isSet: Y == 0)
             pNegative(isSet: (Y & 0x80) != 0)
             mCycles = 2
             
         case 0x8A:  // TXA impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             A = X
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -668,6 +682,7 @@ extension FAC_6502 {
             mCycles = 4
             
         case 0x98:  // TYA impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             A = Y
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -679,6 +694,7 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0x9A:  // TXS impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             S = X
             mCycles = 2
             
@@ -724,6 +740,7 @@ extension FAC_6502 {
             mCycles = 3
             
         case 0xA8:  // TAY impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             Y = A
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -736,6 +753,7 @@ extension FAC_6502 {
             mCycles = 2
             
         case 0xAA:  // TAX impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             X = A
             pZero(isSet: A == 0)
             pNegative(isSet: (A & 0x80) != 0)
@@ -789,6 +807,7 @@ extension FAC_6502 {
             mCycles = 4
             
         case 0xB8:  // CLV impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             reset(overflow)
             mCycles = 2
             
@@ -800,6 +819,7 @@ extension FAC_6502 {
             mCycles = 4 + value.cycles
             
         case 0xBA:  // TSX impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             X = S
             pZero(isSet: X == 0)
             pNegative(isSet: (X & 0x80) != 0)
@@ -856,6 +876,7 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0xC8:  // INY impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             Y = Y &+ 1
             pZero(isSet: Y == 0)
             pNegative(isSet: (Y & 0x80) != 0)
@@ -867,6 +888,7 @@ extension FAC_6502 {
             mCycles = 2
             
         case 0xCA:  // DEX impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             X = X &- 1
             pZero(isSet: X == 0)
             pNegative(isSet: (X & 0x80) != 0)
@@ -914,6 +936,7 @@ extension FAC_6502 {
             mCycles = 6
             
         case 0xD8:  // CLD impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             reset(decimal)
             mCycles = 2
             
@@ -967,6 +990,7 @@ extension FAC_6502 {
             mCycles = 5
             
         case 0xE8:  // INX impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             X = X &+ 1
             pZero(isSet: X == 0)
             pNegative(isSet: (X & 0x80) != 0)
@@ -978,6 +1002,7 @@ extension FAC_6502 {
             mCycles = 2
             
         case 0xEA:  // NOP impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             mCycles = 2
             
         case 0xEC:  // CPX abs
@@ -1021,6 +1046,7 @@ extension FAC_6502 {
             mCycles = 6
             
         case 0xF8:  // SED impl
+            //print("\(oldPC.hex()): \(opCode.hex())")
             set(decimal)
             mCycles = 2
             
@@ -1047,6 +1073,11 @@ extension FAC_6502 {
         }
         
         cycleCount += mCycles
+        
+        if cycleCount >= clockCyclesPerFrame {
+            cycleCount = 0
+            render()
+        }
         //  mCyclesAndTStates(m: mCycles, t: ts)
         // Task {
         //     LoggingService.shared.logProcessor(oldPC, opCode: opCode.hex(), message: nil)

@@ -8,7 +8,7 @@
 import Foundation
 import FAC_Common
 
-extension FAC_6502 {
+public extension FAC_6502 {
     
     func next() -> UInt8 {
         let opcode = memoryRead(from: PC)

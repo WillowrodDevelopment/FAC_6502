@@ -20,6 +20,9 @@ open class FAC_6502 {
     // Flags
     public var P: UInt8 = 0x00     //   NV-BDIZC
     
+    var opCode: UInt8 = 0x00
+    var oldPC: UInt16 = 0x00
+    
     let carry: Int = 0
     let zero: Int = 1
     let interupt: Int = 2
@@ -97,6 +100,11 @@ open class FAC_6502 {
     open func display() {
         // Override to handle screen writes
         fps()
+    }
+    
+    
+    open func memoryWrite(to: UInt16, value: UInt8) {
+        internalMemoryWrite(to: to, value: value)
     }
     
 }

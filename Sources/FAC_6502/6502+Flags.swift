@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension FAC_6502 {
+public extension FAC_6502 {
 
     func resetAll() {
         P = 0x00

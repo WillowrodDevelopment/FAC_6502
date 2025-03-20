@@ -8,8 +8,8 @@
 import Foundation
 import FAC_Common
 
-extension FAC_6502 {
-    public func memoryWrite(to: UInt16, value: UInt8) {
+public extension FAC_6502 {
+    func internalMemoryWrite(to: UInt16, value: UInt8) {
         // Should protect ROM for Sinclair computers
 //        switch to {
 //        case ...0x3FFF:
@@ -47,6 +47,12 @@ extension FAC_6502 {
         return ram[0][Int(from)]
     }
     
+    
+    
+    func memoryRead(from: Int, count: Int) -> [UInt8] {
+        return Array(ram[0][from...from+count])
+    }
+    
     public func memoryWrite(page: UInt8, location: UInt8, value: UInt8) {
         ram[0][Int(wordFrom(low: location, high: page))] = value
     }
@@ -61,7 +67,7 @@ extension FAC_6502 {
     }
 
     func memoryReadWord(from: UInt16) -> UInt16 {
-        let low = memoryRead(from: from)  //memory[Int(from)]
+        let low = memoryRead(from: from)
         let high = memoryRead(from: (from &+ 1)) //memory[Int(from &+ 1)]
         return (UInt16(high) * 256) + UInt16(low)
     }
