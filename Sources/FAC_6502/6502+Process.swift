@@ -8,7 +8,7 @@
 import Foundation
 
 public extension FAC_6502 {
-    public func process() {
+    func process() {
         shouldProcess = true
         //resetProcessor()
         //standard()
@@ -46,34 +46,16 @@ public extension FAC_6502 {
    
     }
     
-    private func handleInterupt() {
-//        if controller.processorSpeed != .paused {
-//            if iff2 == 1 { // If IFF2 is enabled, run the selected interupt mode
-//                if isInHaltState {
-//                    // The Z80 will only come out of halt if interupts are enabled - to 'fix' this, this halt stop can be moved out of the if statement.
-//                    PC = PC &+ 0x01
-//                }
-//                push(PC)
-//                switch interuptMode {
-//                case 0:
-//                    PC = 0x0066
-//                case 1:
-//                    PC = 0x0038
-//                default:
-//                    let intAddress = (UInt16(I) * 256) + UInt16(R)
-//                    PC = memoryReadWord(from: intAddress)
-//                }
-//                isInHaltState = false
-//            }
+    func preProcess() {
+//        if PC == 0xEB48 && shouldLog{
+//            print("Screen write")
 //        }
     }
     
-    func preProcess() {
-
-    }
-    
     func postProcess() {
-        
+        if false {
+            print("")
+        }
     }
     
     public func standard() {

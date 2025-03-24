@@ -6,8 +6,11 @@
 //
 
 import Foundation
+import FAC_Common
 
-open class FAC_6502 {
+open class FAC_6502: LoggingDelegate {
+
+    
     
     
     public var clockCyclesPerFrame = Int(1.108 * BASE_CPU_CLOCK_SPEED) // For PAL Vic20 (1.108Mhz)
@@ -15,6 +18,9 @@ open class FAC_6502 {
     public var rom:[[UInt8]] = []
     public var ram:[[UInt8]] = [Array(repeating: 0x00, count: 0x10000)]
     
+    public var shouldLog = false
+    
+    var loggingService = LoggingService.shared
     // Accumilator
     public var A: UInt8 = 0x00
     // Flags
@@ -107,4 +113,18 @@ open class FAC_6502 {
         internalMemoryWrite(to: to, value: value)
     }
     
+    
+    open func memoryRead(from: UInt16) -> UInt8 {
+        return internalMemoryRead(from: from)
+    }
+    
+    public func logAsPrint(_ l: String) {
+        if shouldLog {
+        //      print(l)
+        }
+    }
+    
+    open func handleInterupt() {
+        
+    }
 }

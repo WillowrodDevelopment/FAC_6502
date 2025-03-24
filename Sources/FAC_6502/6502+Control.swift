@@ -11,19 +11,19 @@ import FAC_Common
 public extension FAC_6502 {
     
     func next() -> UInt8 {
-        let opcode = memoryRead(from: PC)
+        let opcode = internalMemoryRead(from: PC)
         PC = PC &+ 1
         return opcode
     }
     
     func nextWord() -> UInt16 {
-        let word = memoryReadWord(from: PC)
+        let word = internalMemoryReadWord(from: PC)
         PC = PC &+ 2
         return word
     }
     
     func next(_ offset: UInt16) -> UInt8 {
-        return memoryRead(from: PC &+ offset)
+        return internalMemoryRead(from: PC &+ offset)
     }
     
     func push(_ value: UInt8) {
@@ -32,10 +32,8 @@ public extension FAC_6502 {
     }
     
     func push(_ value: UInt16) {
-        memoryWrite(page: 0x1, location: S, value: value.highByte())
-        S = S &- 0x1
-        memoryWrite(page: 0x1, location: S, value: value.lowByte())
-        S = S &- 0x1
+        push(value.highByte())
+        push(value.lowByte())
     }
     
     func pop() -> UInt8 {
@@ -44,11 +42,7 @@ public extension FAC_6502 {
     }
     
     func popWord() -> UInt16 {
-        S = S &+ 0x1
-        let low = memoryRead(page: 0x1, location: S)
-        S = S &+ 0x1
-        let high = memoryRead(page: 0x1, location: S)
-        return wordFrom(low: low, high: high)
+        return wordFrom(low: pop(), high: pop())
     }
     
     func jumpToAddressAt(_ location: UInt16) {
@@ -60,6 +54,13 @@ public extension FAC_6502 {
             return PC &- 0x80
         }
         return PC &- UInt16(twos & 0x7f) &+ UInt16(twos & 0x80)
+    }
+    
+    func relativeJump(from: UInt16, twos: UInt8) -> UInt16 {
+        if twos == 0x80 {
+            return from &- 0x80
+        }
+        return from &- UInt16(twos & 0x7f) &+ UInt16(twos & 0x80)
     }
     
 }

@@ -30,7 +30,10 @@ public extension FAC_6502 {
         ram[0][Int(to)] = value
     }
     
-    func memoryRead(from: UInt16) -> UInt8 {
+    func internalMemoryRead(from: UInt16) -> UInt8 {
+//        if from == 36872 {
+//            print("Reading KB Byte")
+//        }
 //        switch from {
 //        case ...0x3FFF:
 //            return rom[romSelected][Int(from)]
@@ -50,15 +53,23 @@ public extension FAC_6502 {
     
     
     func memoryRead(from: Int, count: Int) -> [UInt8] {
+//        if ram[0].count > (from + count) {
+//            print(" Odddd......... \(from) \(count)")
+//            print(" Odddd......... \(ram.count)")
+//            print(" Odddd......... \(ram[0].count)")
+//        }
         return Array(ram[0][from...from+count])
     }
     
     public func memoryWrite(page: UInt8, location: UInt8, value: UInt8) {
-        ram[0][Int(wordFrom(low: location, high: page))] = value
+        //ram[0][Int(wordFrom(low: location, high: page))] = value
+        memoryWrite(to: UInt16((Int(page) * 256) + Int(location)), value: value)
     }
 
     func memoryRead(page: UInt8, location: UInt8) -> UInt8 {
-        return ram[0][Int(wordFrom(low: location, high: page))]
+        //return ram[0][Int(wordFrom(low: location, high: page))]
+        
+        return memoryRead(from: UInt16((Int(page) * 256) + Int(location)))
     }
 
     func memoryWriteWord(to: UInt16, value: UInt16) {
@@ -69,6 +80,12 @@ public extension FAC_6502 {
     func memoryReadWord(from: UInt16) -> UInt16 {
         let low = memoryRead(from: from)
         let high = memoryRead(from: (from &+ 1)) //memory[Int(from &+ 1)]
+        return (UInt16(high) * 256) + UInt16(low)
+    }
+    
+    func internalMemoryReadWord(from: UInt16) -> UInt16 {
+        let low = internalMemoryRead(from: from)
+        let high = internalMemoryRead(from: (from &+ 1)) //memory[Int(from &+ 1)]
         return (UInt16(high) * 256) + UInt16(low)
     }
     
