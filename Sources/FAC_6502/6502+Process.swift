@@ -8,7 +8,7 @@
 import Foundation
 
 public extension FAC_6502 {
-    func process() {
+    func process() async{
         shouldProcess = true
         //resetProcessor()
         //standard()
@@ -17,16 +17,16 @@ public extension FAC_6502 {
 //                render()
 //                let _ = controller.processorSpeed
 //            } else {
-                preProcess()
-                 fetchAndExecute()
-                postProcess()
+                await preProcess()
+                 await fetchAndExecute()
+                await postProcess()
 //            }
             
         }
         print("Process complete")
     }
     
-    func render() {
+    func render() async {
  //       if controller.processorSpeed != .paused {
             while frameStarted + (1.0 / 50) >= Date().timeIntervalSince1970 { //Double(controller.processorSpeed.rawValue)
                 // Idle while we wait for frame to catch up
@@ -36,9 +36,9 @@ public extension FAC_6502 {
             frameCompleted = false
 //        }
     //    if controller.processorSpeed != .unrestricted {
-            display()
+            await display()
      //   }
-        handleInterupt()
+        await handleInterupt()
 //        if loggingService.isLoggingProcessor {
 //                   loggingService.logProcessor(message: lastPCValues.map{"\($0)"}.joined(separator: "-"))
 //                   lastPCValues.removeAll()
@@ -46,39 +46,41 @@ public extension FAC_6502 {
    
     }
     
-    func preProcess() {
-//        if PC == 0xEB48 && shouldLog{
+//    func preProcess() async {
+//        if PC == 0xEB63{
 //            print("Screen write")
 //        }
-    }
-    
-    func postProcess() {
-        if false {
-            print("")
-        }
-    }
-    
-    public func standard() {
+//    }
+//    
+//    func postProcess() async {
+//        if false {
+//            print("")
+//        }
+//    }
+//    
+    func standard() async {
         //resume()
     }
     
-    public func resume() {
+    func resume() async {
 //        print("standard")
 //        invalidateTimer()
 //        controller.processorSpeed = .standard
     }
-    public func pause() {
+    
+    func pause() async {
 //            print("paused")
 //        invalidateTimer()
 //        controller.processorSpeed = .paused
     }
-    public func fast() {
+   
+    func fast() async {
 //        print("turbo")
 //        invalidateTimer()
 //        controller.processorSpeed = .turbo
     }
     
-    public func unrestricted() {
+    func unrestricted() async {
 //        print("unrestricted")
 //        invalidateTimer()
 //        displayTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
@@ -86,20 +88,20 @@ public extension FAC_6502 {
 //        controller.processorSpeed = .unrestricted
     }
     
-    func invalidateTimer() {
+    func invalidateTimer() async {
 //        displayTimer?.invalidate()
 //        displayTimer = nil
     }
     
-    @objc func fireTimer() {
+    @objc func fireTimer() async {
      //   display()
     }
     
-    public func reboot() {
-        pause()
-        shouldProcess = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { // Change `2.0` to the desired number of seconds.
-            self.startProcess()
-        }
+    func reboot() async {
+//        await pause()
+//        shouldProcess = false
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { // Change `2.0` to the desired number of seconds.
+//            self.startProcess()
+//        }
     }
 }

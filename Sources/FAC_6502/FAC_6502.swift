@@ -9,14 +9,12 @@ import Foundation
 import FAC_Common
 
 open class FAC_6502: LoggingDelegate {
-
-    
-    
-    
     public var clockCyclesPerFrame = Int(1.108 * BASE_CPU_CLOCK_SPEED) // For PAL Vic20 (1.108Mhz)
     
-    public var rom:[[UInt8]] = []
-    public var ram:[[UInt8]] = [Array(repeating: 0x00, count: 0x10000)]
+//    public var rom:[[UInt8]] = []
+//    public var ram:[[UInt8]] = [Array(repeating: 0x00, count: 0x10000)]
+    
+    public let ram = RAM()
     
     public var shouldLog = false
     
@@ -56,38 +54,30 @@ open class FAC_6502: LoggingDelegate {
     public init() {
     }
     
-    public func test() {
-        print("6502 CPU")
-    }
+//    public func startProcess() {
+//        Task {
+//            await process()
+//        }
+//    }
     
-    public func setProcessorSpeed(mhz: Double){
+    public func setProcessorSpeed(mhz: Double) async {
         clockCyclesPerFrame = Int(mhz * BASE_CPU_CLOCK_SPEED)
     }
     
-    public func test1() -> Int {
-        return 6502
-    }
-    
-    public func resetProcessor(){
+    public func resetProcessor() async {
         A = 0x00
         P = 0x00
         X = 0x00
         Y = 0x00
         S = 0xFF
-        ram[0] = Array(repeating: 0x00, count: 0x10000)
+        await ram.reset()
     }
     
     public func logOut() {
         print("Actual values:\nPC: \(PC.toLog())\nS: \(S.toLog())\nA: \(A.toLog())\nP: \(P.toLog())\nX: \(X.toLog())\nY: \(Y.toLog())")
     }
     
-    public func startProcess() {
-        Task {
-            await process()
-        }
-    }
-    
-    open func fps() {
+    open func fps() async {
         
 //        if controller.processorSpeed != .paused {
 //            let seconds = Int(Date().timeIntervalSince1970 - startTime)
@@ -103,19 +93,18 @@ open class FAC_6502: LoggingDelegate {
 //        }
     }
     
-    open func display() {
-        // Override to handle screen writes
-        fps()
+    open func display() async {
+        await fps()
     }
     
     
-    open func memoryWrite(to: UInt16, value: UInt8) {
-        internalMemoryWrite(to: to, value: value)
+    open func memoryWrite(to: UInt16, value: UInt8) async {
+        await internalMemoryWrite(to: to, value: value)
     }
     
     
-    open func memoryRead(from: UInt16) -> UInt8 {
-        return internalMemoryRead(from: from)
+    open func memoryRead(from: UInt16) async -> UInt8 {
+        return await internalMemoryRead(from: from)
     }
     
     public func logAsPrint(_ l: String) {
@@ -124,7 +113,18 @@ open class FAC_6502: LoggingDelegate {
         }
     }
     
-    open func handleInterupt() {
+    open func handleInterupt() async {
         
     }
+    
+    open func preProcess() async {
+
+    }
+    
+    open func postProcess() async {
+        if false {
+            print("")
+        }
+    }
+    
 }

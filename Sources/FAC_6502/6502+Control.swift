@@ -10,53 +10,53 @@ import FAC_Common
 
 public extension FAC_6502 {
     
-    func next() -> UInt8 {
-        let opcode = internalMemoryRead(from: PC)
+    func next() async -> UInt8 {
+        let opcode = await internalMemoryRead(from: PC)
         PC = PC &+ 1
         return opcode
     }
     
-    func nextWord() -> UInt16 {
-        let word = internalMemoryReadWord(from: PC)
+    func nextWord() async -> UInt16 {
+        let word = await internalMemoryReadWord(from: PC)
         PC = PC &+ 2
         return word
     }
     
-    func next(_ offset: UInt16) -> UInt8 {
-        return internalMemoryRead(from: PC &+ offset)
+    func next(_ offset: UInt16) async -> UInt8 {
+        return await internalMemoryRead(from: PC &+ offset)
     }
     
-    func push(_ value: UInt8) {
-        memoryWrite(page: 0x1, location: S, value: value)
+    func push(_ value: UInt8) async {
+        await memoryWrite(page: 0x1, location: S, value: value)
         S = S &- 0x1
     }
     
-    func push(_ value: UInt16) {
-        push(value.highByte())
-        push(value.lowByte())
+    func push(_ value: UInt16) async {
+        await push(value.highByte())
+        await push(value.lowByte())
     }
     
-    func pop() -> UInt8 {
+    func pop() async -> UInt8 {
         S = S &+ 0x1
-        return memoryRead(page: 0x1, location: S)
+        return await memoryRead(page: 0x1, location: S)
     }
     
-    func popWord() -> UInt16 {
-        return wordFrom(low: pop(), high: pop())
+    func popWord() async -> UInt16 {
+        return await wordFrom(low: pop(), high: pop())
     }
     
-    func jumpToAddressAt(_ location: UInt16) {
-        PC = memoryReadWord(from: location)
+    func jumpToAddressAt(_ location: UInt16) async {
+        PC = await memoryReadWord(from: location)
     }
     
-    func relativeJump(twos: UInt8) -> UInt16 {
+    func relativeJump(twos: UInt8) async -> UInt16 {
         if twos == 0x80 {
             return PC &- 0x80
         }
         return PC &- UInt16(twos & 0x7f) &+ UInt16(twos & 0x80)
     }
     
-    func relativeJump(from: UInt16, twos: UInt8) -> UInt16 {
+    func relativeJump(from: UInt16, twos: UInt8) async -> UInt16 {
         if twos == 0x80 {
             return from &- 0x80
         }
