@@ -13,14 +13,14 @@ public extension FAC_6502 {
         //resetProcessor()
         //standard()
         while shouldProcess {
-//            if controller.processorSpeed == .paused {
-//                render()
-//                let _ = controller.processorSpeed
-//            } else {
+            if processorSpeed == .paused {
+                await render()
+                let _ = processorSpeed
+            } else {
                 await preProcess()
                  await fetchAndExecute()
                 await postProcess()
-//            }
+            }
             
         }
         print("Process complete")
@@ -28,7 +28,7 @@ public extension FAC_6502 {
     
     func render() async {
  //       if controller.processorSpeed != .paused {
-            while frameStarted + (1.0 / 50) >= Date().timeIntervalSince1970 { //Double(controller.processorSpeed.rawValue)
+            while frameStarted + (1.0 / Double(processorSpeed.rawValue)) >= Date().timeIntervalSince1970 { //Double(controller.processorSpeed.rawValue)
                 // Idle while we wait for frame to catch up
                 
             }
@@ -59,25 +59,25 @@ public extension FAC_6502 {
 //    }
 //    
     func standard() async {
-        //resume()
+        await resume()
     }
     
     func resume() async {
 //        print("standard")
 //        invalidateTimer()
-//        controller.processorSpeed = .standard
+        processorSpeed = .standard
     }
     
     func pause() async {
 //            print("paused")
 //        invalidateTimer()
-//        controller.processorSpeed = .paused
+        processorSpeed = .paused
     }
    
     func fast() async {
 //        print("turbo")
 //        invalidateTimer()
-//        controller.processorSpeed = .turbo
+        processorSpeed = .turbo
     }
     
     func unrestricted() async {
@@ -85,7 +85,7 @@ public extension FAC_6502 {
 //        invalidateTimer()
 //        displayTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
 //        displayTimer?.fire()
-//        controller.processorSpeed = .unrestricted
+        processorSpeed = .unrestricted
     }
     
     func invalidateTimer() async {

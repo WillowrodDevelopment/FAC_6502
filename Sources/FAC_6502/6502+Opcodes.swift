@@ -144,7 +144,7 @@ public extension FAC_6502 {
             // Flags are not affected
             let value = await fetchValue(mode: .relative, condition: !P.isSet(bit: negative))
             mCycles = value.cycles
-            logProcessor(oldPC, "BPL \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3)))")
+            logProcessor(oldPC, "BPL \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3).hex()))")
             
         case 0x11:  // ORA ind,Y
             // Current understanding - ORA ind,Y Or's 'A' with the page 0 contents of location ((Y + Byte 2 + 1 + carry (high)) (Y + Byte 2) (low))
@@ -319,7 +319,7 @@ public extension FAC_6502 {
         case 0x30:  // BMI rel
             let value = await fetchValue(mode: .relative, condition: P.isSet(bit: negative))
             mCycles = value.cycles
-            logProcessor(oldPC, "BMI \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3)))")
+            logProcessor(oldPC, "BMI \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3).hex()))")
             
         case 0x31:  // AND ind,Y
             let value = await fetchValue(mode: .indirectY)
@@ -474,7 +474,7 @@ public extension FAC_6502 {
         case 0x50:  // BVC rel
             let value = await fetchValue(mode: .relative, condition: !P.isSet(bit: overflow))
             mCycles = value.cycles
-            logProcessor(oldPC, "BVC \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3)))")
+            logProcessor(oldPC, "BVC \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3).hex()))")
             
         case 0x51:  // EOR ind,Y
             let value = await fetchValue(mode: .indirectY)
@@ -624,7 +624,7 @@ public extension FAC_6502 {
         case 0x70:  // BVS rel
             let value = await fetchValue(mode: .relative, condition: P.isSet(bit: overflow))
             mCycles = value.cycles
-            logProcessor(oldPC, "BVS \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3)))")
+            logProcessor(oldPC, "BVS \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3).hex()))")
             
         case 0x71:  // ADC ind,Y
             let value = await fetchValue(mode: .indirectY)
@@ -743,7 +743,7 @@ public extension FAC_6502 {
         case 0x90:  // BCC rel
             let value = await fetchValue(mode: .relative, condition: !P.isSet(bit: carry))
             mCycles = value.cycles
-            logProcessor(oldPC, "BCC \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3)))")
+            logProcessor(oldPC, "BCC \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3).hex()))")
             
         case 0x91:  // STA ind,Y
             let value = await fetchValue(mode: .indirectY)
@@ -894,7 +894,7 @@ public extension FAC_6502 {
         case 0xB0:  // BCS rel
             let value = await fetchValue(mode: .relative, condition: P.isSet(bit: carry))
             mCycles = value.cycles
-            logProcessor(oldPC, "BCS \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3)))")
+            logProcessor(oldPC, "BCS \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3).hex()))")
             
         case 0xB1:  // LDA ind,Y
             let value = await fetchValue(mode: .indirectY)
@@ -1054,7 +1054,7 @@ public extension FAC_6502 {
         case 0xD0:  // BNE rel
             let value = await fetchValue(mode: .relative, condition: !P.isSet(bit: zero))
             mCycles = value.cycles
-            logProcessor(oldPC, "BNE \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3)))")
+            logProcessor(oldPC, "BNE \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3).hex()))")
             
         case 0xD1:  // CMP ind,Y
             let addressingValue = await fetchValue(mode: .indirectY)
@@ -1184,7 +1184,7 @@ public extension FAC_6502 {
         case 0xF0:  // BEQ rel
             let value = await fetchValue(mode: .relative, condition: P.isSet(bit: zero))
             mCycles = value.cycles
-            logProcessor(oldPC, "BEQ \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3)))")
+            logProcessor(oldPC, "BEQ \(value.byte2.hex())(\(await relativeJump(from: oldPC, twos: value.byte3).hex())")
             
         case 0xF1:  // SBC ind,Y
             let value = await fetchValue(mode: .indirectY)

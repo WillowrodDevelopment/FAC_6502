@@ -45,11 +45,17 @@ open class FAC_6502: LoggingDelegate {
     
     public var cycleCount = 0
     
-
+    public var processorSpeed: ProcessorSpeed = .standard
+    
     public var shouldProcess = false
 
     var frameCompleted = false
     var frameStarted: TimeInterval = Date().timeIntervalSince1970
+    
+    var frames = 0
+    var startTime = Date().timeIntervalSince1970
+    public var fpsValue = 0
+    public var secondsValue = 0
     
     public init() {
     }
@@ -77,20 +83,15 @@ open class FAC_6502: LoggingDelegate {
         print("Actual values:\nPC: \(PC.toLog())\nS: \(S.toLog())\nA: \(A.toLog())\nP: \(P.toLog())\nX: \(X.toLog())\nY: \(Y.toLog())")
     }
     
-    open func fps() async {
-        
-//        if controller.processorSpeed != .paused {
-//            let seconds = Int(Date().timeIntervalSince1970 - startTime)
-//            frames += 1
-//            if seconds > secondsValue {
-//                secondsValue = seconds
-//                controller.lastSecondValue = frames// / seconds
-//                frames = 0
-//                
-//            }
-//        } else {
-//            controller.lastSecondValue = 0
-//        }
+    open func fps() async -> Int {
+            let seconds = Int(Date().timeIntervalSince1970 - startTime)
+            frames += 1
+            if seconds > secondsValue {
+                secondsValue = seconds
+                fpsValue = frames
+                frames = 0
+            }
+return fpsValue
     }
     
     open func display() async {
