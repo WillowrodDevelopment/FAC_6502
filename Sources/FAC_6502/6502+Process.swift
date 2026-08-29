@@ -15,6 +15,7 @@ public extension FAC_6502 {
         while shouldProcess {
             if processorSpeed == .paused {
                 await render()
+                try? await Task.sleep(nanoseconds: 16_000_000)
                 let _ = processorSpeed
             } else {
                 await preProcess()
@@ -27,14 +28,16 @@ public extension FAC_6502 {
     }
     
     func render() async {
- //       if controller.processorSpeed != .paused {
-            while frameStarted + (1.0 / Double(processorSpeed.rawValue)) >= Date().timeIntervalSince1970 { //Double(controller.processorSpeed.rawValue)
-                // Idle while we wait for frame to catch up
-                
+        if processorSpeed != .paused {
+            let targetTime = frameStarted + (1.0 / Double(processorSpeed.rawValue))
+            let now = Date().timeIntervalSince1970
+            if targetTime > now {
+                let sleepNanos = UInt64((targetTime - now) * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: sleepNanos)
             }
             frameStarted = Date().timeIntervalSince1970
             frameCompleted = false
-//        }
+        }
     //    if controller.processorSpeed != .unrestricted {
             await display()
      //   }
