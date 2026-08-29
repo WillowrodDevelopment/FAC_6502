@@ -13,10 +13,10 @@ public extension FAC_6502 {
         //resetProcessor()
         //standard()
         while shouldProcess {
-            if processorSpeed == .paused {
-                await render()
-                try? await Task.sleep(nanoseconds: 16_000_000)
-                let _ = processorSpeed
+            if processorSpeed == .paused || isAppInBackground {
+                // Paused / backgrounded: show the static frame and idle at ~1 FPS.
+                // No display() call — the last rendered frame stays on screen.
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
             } else {
                 await preProcess()
                  await fetchAndExecute()
@@ -24,7 +24,9 @@ public extension FAC_6502 {
             }
             
         }
+#if DEBUG
         print("Process complete")
+#endif
     }
     
     func render() async {
@@ -75,12 +77,6 @@ public extension FAC_6502 {
 //            print("paused")
 //        invalidateTimer()
         processorSpeed = .paused
-    }
-   
-    func fast() async {
-//        print("turbo")
-//        invalidateTimer()
-        processorSpeed = .turbo
     }
     
     func unrestricted() async {

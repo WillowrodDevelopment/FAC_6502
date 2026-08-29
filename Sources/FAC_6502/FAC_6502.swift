@@ -47,6 +47,10 @@ open class FAC_6502: LoggingDelegate {
     
     public var processorSpeed: ProcessorSpeed = .standard
     
+    /// Set by the app when the app enters background (scenePhase != .active).
+    /// The emulation loop idles at ~1 FPS and stops rendering while true.
+    public var isAppInBackground = false
+    
     public var shouldProcess = false
 
     var frameCompleted = false
